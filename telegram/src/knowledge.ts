@@ -70,13 +70,14 @@ export const TAX_KNOWLEDGE_BASE: TaxFAQ[] = [
       '*🇺🇸 US Rates (2025):*\n' +
       '• Short-term (held < 1 year): taxed as ordinary income, 10%–37%\n' +
       '• Long-term (held > 1 year): 0%, 15%, or 20% depending on income\n' +
-      '• Net Investment Income Tax may add 3.8% for high earners\n\n' +
-      '*🇬🇧 UK Rates (2024/25):*\n' +
-      '• Annual exempt amount: £3,000\n' +
-      '• Basic rate: 18% | Higher rate: 24%\n\n' +
-      '*Strategy:* Holding over 12 months before selling can cut your tax rate significantly.',
+      '• Net Investment Income Tax may add 3.8% for high earners\n' +
+      '• *New 2025:* IRS Form 1099-DA — crypto brokers (Coinbase, Kraken, etc.) must now report user transactions to IRS (effective Jan 2025). Expect 1099s in your mail.\n\n' +
+      '*🇬🇧 UK Rates (2025/26, post-Autumn Budget 2024):*\n' +
+      '• Annual exempt amount: *£3,000* (unchanged)\n' +
+      '• CGT rates INCREASED: *18%* (basic rate) | *24%* (higher rate) — effective 30 Oct 2024\n\n' +
+      '*Strategy:* Holding over 12 months before selling can cut your US tax rate significantly. In the UK, use your annual exemption fully before year-end.',
     jurisdiction: 'US, UK',
-    keywords: ['capital gains', 'short term', 'long term', 'rate', 'tax rate', '37%', '20%', 'calculate gain', 'one year', 'holding period', 'cost basis'],
+    keywords: ['capital gains', 'short term', 'long term', 'rate', 'tax rate', '37%', '20%', 'calculate gain', 'one year', 'holding period', 'cost basis', '1099', '1099-da', 'broker reporting'],
   },
 
   // ── 3. DeFi ────────────────────────────────────────────────────────────────
@@ -191,22 +192,28 @@ export const TAX_KNOWLEDGE_BASE: TaxFAQ[] = [
     keywords: ['uk', 'hmrc', 'united kingdom', 'british', 'cgt', 'capital gains tax', 'section 104', '30 day rule', 'self assessment', 'england', '£3000'],
   },
 
-  // ── 9. Nigeria (FIRS) ──────────────────────────────────────────────────────
+  // ── 9. Nigeria (FIRS) ──────────────────────────────────────────
   {
     id: 9,
     topic: 'Nigeria (FIRS) Rules',
     question: 'How is crypto taxed in Nigeria?',
     answer:
-      '🇳🇬 *Nigeria Crypto Tax (FIRS):*\n\n' +
-      '• The Finance Act 2023 introduced a *10% Capital Gains Tax* on crypto and digital asset disposals\n' +
-      '• Crypto-to-crypto swaps are taxable disposals\n' +
-      '• Business income from crypto trading is subject to *Companies Income Tax (CIT)* or *Personal Income Tax (PIT)*\n' +
-      '• Staking/mining rewards: likely treated as income under existing tax law\n\n' +
-      '⚠️ *Regulatory backdrop*: The CBN banned banks from facilitating crypto (2021) then partially reversed. Binance Nigeria was shut down (2024). Regulations are evolving rapidly.\n\n' +
-      '📋 *Reporting*: Annual self-assessment return with FIRS. Maintain detailed records of all transactions in Naira equivalent at time of trade.\n\n' +
-      '💡 *Practical advice*: Use a local tax professional familiar with FIRS digital asset guidance — the framework is still developing.',
+      '🇳🇬 *Nigeria Crypto Tax (FIRS) — Updated 2025:*\n\n' +
+      '📋 *Key Tax Laws:*\n' +
+      '• *Finance Act 2023*: Introduced a *10% Capital Gains Tax* on crypto and digital asset disposals — still in effect\n' +
+      '• *2024 FIRS Guidance*: FIRS issued clarification letters to major Nigerian crypto users, demanding 3-year transaction histories from exchanges\n' +
+      '• Crypto-to-crypto swaps are taxable disposals at FMV in NGN\n' +
+      '• Business/trading income from crypto: subject to *Companies Income Tax (CIT)* at 30% or *Personal Income Tax (PIT)* at up to 24%\n' +
+      '• Staking/mining rewards: treated as income under existing tax law\n\n' +
+      '🚨 *2024–2025 Enforcement Developments:*\n' +
+      '• Binance Nigeria operations shut down (Feb 2024) — EFCC detained Binance exec Tigran Gambaryan\n' +
+      '• FIRS now actively requesting KYC data from P2P platforms and local exchanges\n' +
+      '• CBN reversed its 2021 crypto banking ban via new framework (Dec 2023), allowing regulated crypto businesses\n' +
+      '• FIRS and SEC Nigeria are jointly developing a 2025 Digital Assets Tax Framework\n\n' +
+      '📋 *Filing:* Annual self-assessment return with FIRS. Record all transactions in Naira equivalent at time of trade (use CBN official rate or exchange rate at time).\n\n' +
+      '💡 *Practical advice:* Keep full records — FIRS is actively pursuing crypto taxpayers. A Nigerian tax professional with digital asset experience is strongly recommended.',
     jurisdiction: 'Nigeria',
-    keywords: ['nigeria', 'nigerian', 'firs', 'naira', 'lagos', 'abuja', 'cbn', 'finance act', 'ng', 'africa'],
+    keywords: ['nigeria', 'nigerian', 'firs', 'naira', 'lagos', 'abuja', 'cbn', 'finance act', 'ng', 'africa', 'binance nigeria', 'efcc', 'sec nigeria'],
   },
 
   // ── 10. Record Keeping ─────────────────────────────────────────────────────
@@ -406,4 +413,3 @@ export function getFreeTierWelcome(): string {
     'What do you need help with? 🚀'
   );
 }
-
