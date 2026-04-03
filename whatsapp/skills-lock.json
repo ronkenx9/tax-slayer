@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "skills": {
+    "alchemy-agentic-gateway": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "05f5ada339c84413abf8f51b25a88af40635fe7d0b822f0f612f3cc936c97169"
+    },
+    "alchemy-api": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "4f6f02dde539ea425a2311e06cc8ea4d1040c4208eb66ffb3369fbb9b1c51908"
+    },
+    "allium-onchain-data": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "3df1f6c779aa1575c61ca1d220dfc54d7be0ee8c6914dbb61ee36818a2726459"
+    },
+    "allium-x402": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "055587039f4ff5c7611da28cabd254c2df4422c092f3692fd380153c8fdbfb70"
+    },
+    "corbits-marketplace": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "50bc31d537ae751f30b9c8b0a68690d2ec7eef4175b28de068dec655ecd71ffa"
+    },
+    "dune-analytics": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "f7428d62463e887c4fbc5528f3a7a76aa061e5a3819e01b33226a7c5d433cb3c"
+    },
+    "maiat-token-safety": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "4519b8dc5e2fa1cc48e5e16f77e68a9cf2adbd6ed5b1d3655668bc18c2ec2c93"
+    },
+    "maiat-trust-check": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "b58ed87f06c4e581c782cc745384901213e6f5233c62fee133efa8dd77826874"
+    },
+    "messari-alpha-scout": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "2cffb87f9e9684eecdf0bf50e60cc9372bc0aef8d47e0f330897e9d86fe37f80"
+    },
+    "messari-deep-research": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "9dd0f74a5efc3830b9cf19660425550a2c8cecb2f90320639aa01847815a8a92"
+    },
+    "messari-funding-intel": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "0b2ba780d97b8db6164d4a59262c4d966512893264cda291b90377abf9a2fb62"
+    },
+    "messari-token-research": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "3d549fe4d26e6a6fc213a97531fac80ac26ca04f9557da39302d0e8ddd663af8"
+    },
+    "messari-x402": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "3f7f4b29ae792f04a0a1a797b32e542ca2386ca59e1811e86d228db0dff4b556"
+    },
+    "moonpay-auth": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "cd14954df6e2e3bf5c3a891f11003c338420ad1e1b3bb7b3d1a0fc0846d21f46"
+    },
+    "moonpay-block-explorer": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "b1aac5acfc83de75d98f6f8f764502886174b67f70d2fbd5e80a3ecf5b118d0f"
+    },
+    "moonpay-buy-crypto": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "6022ef0165acfef7e079f527c773847d4b349007cb3d5ec61c4baa559f37a01d"
+    },
+    "moonpay-check-wallet": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "284196e5c5af9ca25763798d846e972798bcaa5fac2e0532c89a3f1d0b5a2c7e"
+    },
+    "moonpay-commerce": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "2170a1c81b85c15520ecd9c0bcbefd7c4e527b323cc64fdbfdd04024e20a2fea"
+    },
+    "moonpay-deposit": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "1487859e85be2b22cb97ba787d896d131cbeb7e305811a3db74ea2d733401837"
+    },
+    "moonpay-discover-tokens": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "56856ba3041a21b0236a567f28f977b0e1d9de9df5edd10602b920fa764f8b37"
+    },
+    "moonpay-export-data": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "5c33dac328a2e969aecb57377c8cf1416a0abb87dbddbf624a4842e8caccca62"
+    },
+    "moonpay-feedback": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "49b01ccfd6a84f06880aabcc29c9e5e4bc2356780edc9fb6a9352a614b57fc5b"
+    },
+    "moonpay-fund-polymarket": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "7f499996314ad6ae371f394bad55a8bb770404611497a31372587f04d7d50115"
+    },
+    "moonpay-hardware-wallet": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "4dbede86efbf3b19d1ba84c32caff54c0e0e4a85ea58e95b7f603a939fb6fef8"
+    },
+    "moonpay-mcp": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "0ac41da58811a5b89ed56df8e9bfa1215ceb2f4ccdccd1808bf1e8e4f6d23a18"
+    },
+    "moonpay-missions": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "01bc200b4f277a265dd36543acc69d4a4293734258db89ab4915f126afb78b40"
+    },
+    "moonpay-prediction-market": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "4651eac7c172e7a6e94069676a2b09c5fcb1feab3359b9b3beb72b213ad30bcf"
+    },
+    "moonpay-price-alerts": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "fdeda2077e484e3c2729746ba9c8bc8d817c33fd0ff7074c6aef1eafbdaf5b5e"
+    },
+    "moonpay-scout": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "984b54a85d2ab18199ee3c43a7baeb1674873afdfb3f274ccaa7e681cd433eb4"
+    },
+    "moonpay-swap-tokens": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "880277395acc65339c1b9bcbc0cc89b18e1385e4b5046712da82ccab9e3d3c90"
+    },
+    "moonpay-trading-automation": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "fa35f026a9c4eeb44b2b8de4a0cdc73ebe27be9d2933fe2be2ee7969ffaa580e"
+    },
+    "moonpay-upgrade": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "a996025af0df0ce1b3b2eb0ebf9278672e3e265f0901481854fe692d909c075b"
+    },
+    "moonpay-virtual-account": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "bfe5eeb27d3f474f6943abe6bbfab8ea749eed12705ff189be9f27704395e487"
+    },
+    "moonpay-x402": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "1009c188e8452bbd532de4fc97d470efe0a66a51be041d0c7415faa4e1a1c107"
+    },
+    "myriad-prediction-markets": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "69f38d3e703989a1dc87fe8f40ad5613c915b64c236ed964ba7249d10f173f5d"
+    },
+    "partner-skill-name": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "99a23a8af84c7bf7af0956b588ee17fcdf0727f76c85e2122c0aa69605ecd8a4"
+    },
+    "shipp-sports-data": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "840d2972c254dc9080775c8f1002fc9c140b7291354fed97695559129386abe9"
+    },
+    "thoughtproof-reasoning-check": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "d1edaadf2d0c3bd055afa3a3c7be8785aebeaaceb09950edd2aecfe308a071cf"
+    },
+    "zerion-wallet-data": {
+      "source": "moonpay/skills",
+      "sourceType": "github",
+      "computedHash": "e1e73e2d678ac55b93ee6f215f04677a9fc67d8aefeed4ca0d181346e3adfd75"
+    }
+  }
+}

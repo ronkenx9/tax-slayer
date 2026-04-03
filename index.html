@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tax Slayer — x402 Crypto Tax Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,400;1,600&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>tailwind.config = { theme: { extend: { colors: { teal: '#00D4AA', amber: '#F59E0B', charcoal: '#0A0E12', mid: '#111820', dim: '#1A2433' }, fontFamily: { syne: ['Syne', 'sans-serif'], grotesk: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], serif: ['Cormorant Garamond', 'serif'] } } } }</script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: #0A0E12;
+            color: #E2E8F0;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden
+        }
+
+        .noise {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: .03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")
+        }
+
+        .topo-bg {
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0, 212, 170, .06) 60px), repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(0, 212, 170, .04) 60px)
+        }
+
+        .binary-rain {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        .binary-col {
+            position: absolute;
+            top: -100%;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #00D4AA;
+            opacity: .12;
+            writing-mode: vertical-lr;
+            animation: rain linear infinite
+        }
+
+        @keyframes rain {
+            0% {
+                transform: translateY(0)
+            }
+
+            100% {
+                transform: translateY(200vh)
+            }
+        }
+
+        .pill-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px)
+        }
+
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform .4s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        .card-3d:hover {
+            transform: translateY(-6px) rotateX(3deg)
+        }
+
+        .glow {
+            box-shadow: 0 0 40px rgba(0, 212, 170, .15)
+        }
+
+        .glow-amber {
+            box-shadow: 0 0 40px rgba(245, 158, 11, .15)
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: .5;
+                transform: scale(1.4)
+            }
+        }
+
+        @keyframes ekg {
+            0% {
+                stroke-dashoffset: 300
+            }
+
+            100% {
+                stroke-dashoffset: 0
+            }
+        }
+
+        @keyframes spin-slow {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(140px)
+            }
+
+            100% {
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-10px)
+            }
+        }
+
+        .sticky-card {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+    </style>
+</head>
+
+<body>
+    <div class="noise"></div>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React;
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        // ── Inline SVG Icons ──────────────────────────────────────────────────────────
+        const ChatIcon = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+        );
+        const WalletIcon = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="3" />
+                <path d="M16 12h2" />
+                <circle cx="17" cy="12" r="1" fill="currentColor" />
+            </svg>
+        );
+        const DocIcon = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="8" y1="13" x2="16" y2="13" />
+                <line x1="8" y1="17" x2="16" y2="17" />
+            </svg>
+        );
+        const ShieldIcon = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+        );
+        const BoltIcon = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+        );
+
+
+        // ── Binary Rain ───────────────────────────────────────────────────────────────
+        const BinaryRain = () => {
+            const cols = Array.from({ length: 20 }, (_, i) => ({
+                id: i, left: `${i * 5 + 1}%`,
+                delay: `${(Math.random() * 8).toFixed(1)}s`,
+                dur: `${(6 + Math.random() * 6).toFixed(1)}s`,
+                chars: Array.from({ length: 40 }, () => Math.random() > .5 ? '1' : '0').join('\n')
+            }));
+            return (
+                <div className="binary-rain">
+                    {cols.map(c => (
+                        <div key={c.id} className="binary-col" style={{ left: c.left, animationDelay: c.delay, animationDuration: c.dur }}>{c.chars}</div>
+                    ))}
+                </div>
+            );
+        };
+
+        // ── Topo SVG Background ───────────────────────────────────────────────────────
+        const TopoBackground = () => (
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" style={{ opacity: .18 }}>
+                <defs><filter id="blur"><feGaussianBlur stdDeviation="2" /></filter></defs>
+                {[0, 1, 2, 3, 4, 5, 6].map(i => (
+                    <path key={i} d={`M${-200 + i * 60},${700 - i * 40} C${200 + i * 40},${500 - i * 60} ${500 + i * 30},${750 - i * 50} ${800 + i * 20},${600 - i * 45} S${1200 + i * 30},${650 - i * 35} ${1700},${700 - i * 40}`}
+                        fill="none" stroke="#00D4AA" strokeWidth={i === 3 ? 2 : 1} opacity={1 - i * .12} filter="url(#blur)" />
+                ))}
+                {[0, 1, 2, 3].map(i => (
+                    <ellipse key={`e${i}`} cx={`${20 + i * 25}%`} cy={`${40 + i * 15}%`} rx={`${15 + i * 8}%`} ry={`${8 + i * 4}%`}
+                        fill="none" stroke="#00D4AA" strokeWidth="0.5" opacity={.3 - i * .06} />
+                ))}
+            </svg>
+        );
+
+
+
+        // ── Navbar ────────────────────────────────────────────────────────────────────
+        const Navbar = () => {
+            const [scrolled, setScrolled] = useState(false);
+            useEffect(() => {
+                const onScroll = () => setScrolled(window.scrollY > 60);
+                window.addEventListener('scroll', onScroll);
+                return () => window.removeEventListener('scroll', onScroll);
+            }, []);
+            return (
+                <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-5xl">
+                    <div className={`pill-nav flex items-center justify-between px-6 py-3 rounded-full transition-all duration-500 ${scrolled ? 'bg-charcoal/80 border border-teal/20 glow' : 'bg-transparent'}`}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-teal flex items-center justify-center">
+                                <span className="text-charcoal font-syne font-black text-sm">TS</span>
+                            </div>
+                            <span className="font-syne font-bold text-lg tracking-tight">Tax Slayer</span>
+                        </div>
+                        <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
+                            {['Features', 'Protocol', 'Pricing'].map(l => (
+                                <a key={l} href={`#${l.toLowerCase()}`} className="hover:text-teal transition-colors">{l}</a>
+                            ))}
+                        </div>
+                        <a href="#pricing" className="bg-teal text-charcoal font-syne font-bold text-sm px-5 py-2 rounded-full hover:bg-teal/90 transition-all hover:scale-105">
+                            Start Free
+                        </a>
+                    </div>
+                </nav>
+            );
+        };
+
+        // ── Hero ──────────────────────────────────────────────────────────────────────
+        const Hero = () => {
+            const heroRef = useRef(null);
+            useEffect(() => {
+                const ctx = gsap.context(() => {
+                    gsap.from('.hero-tag', { opacity: 0, y: 20, duration: .6, delay: .2 });
+                    gsap.from('.hero-line1', { opacity: 0, y: 60, duration: .9, delay: .4, ease: 'power3.out' });
+                    gsap.from('.hero-line2', { opacity: 0, y: 60, duration: .9, delay: .6, ease: 'power3.out' });
+                    gsap.from('.hero-sub', { opacity: 0, y: 30, duration: .7, delay: .9 });
+                    gsap.from('.hero-btns', { opacity: 0, y: 30, duration: .7, delay: 1.1 });
+                    gsap.from('.hero-stats', { opacity: 0, y: 20, duration: .7, delay: 1.3 });
+                }, heroRef);
+                return () => ctx.revert();
+            }, []);
+
+            return (
+                <section ref={heroRef} className="relative min-h-[100dvh] flex flex-col justify-end pb-24 px-8 overflow-hidden topo-bg">
+                    <div className="absolute inset-0 bg-gradient-to-b from-charcoal/60 via-charcoal/40 to-charcoal" />
+                    <TopoBackground />
+                    <BinaryRain />
+
+
+                    <div className="relative z-10 max-w-6xl mx-auto w-full">
+                        <h1 className="font-syne font-black leading-[.95] mb-6">
+                            <div className="hero-line1 text-[clamp(2.5rem,7vw,7.5rem)] text-white">The IRS never</div>
+                            <div className="hero-line1 text-[clamp(2.5rem,7vw,7.5rem)] text-white">sleeps.</div>
+                            <div className="hero-line2 text-[clamp(2.5rem,7vw,7.5rem)] font-serif italic text-teal">Neither does</div>
+                            <div className="hero-line1 text-[clamp(2.5rem,7vw,7.5rem)] font-serif italic text-teal">your agent.</div>
+                        </h1>
+
+                        <p className="hero-sub text-slate-400 text-xl max-w-xl mb-10 leading-relaxed">
+                            Ask crypto tax questions free. Get a full on-chain report for <span className="text-amber font-mono">$10 USDC</span>. Delivered to WhatsApp or Telegram in under 60 seconds.
+                        </p>
+
+                        <div className="hero-btns flex flex-wrap gap-4 mb-16">
+                            <a href="https://t.me/YourBotName" target="_blank" className="flex items-center gap-3 bg-teal text-charcoal font-syne font-bold px-8 py-4 rounded-2xl hover:scale-105 transition-all glow">
+                                <ChatIcon /> Open on Telegram
+                            </a>
+                            <a href="#protocol" className="flex items-center gap-3 border border-slate-700 text-white px-8 py-4 rounded-2xl hover:border-teal/50 hover:text-teal transition-all">
+                                <DocIcon /> How It Works
+                            </a>
+                        </div>
+
+                        <div className="hero-stats grid grid-cols-3 gap-8 max-w-lg">
+                            {[
+                                { val: '$0', label: 'Free Q&A, always' },
+                                { val: '$10', label: 'Full on-chain report' },
+                                { val: '60s', label: 'Report delivery' }
+                            ].map(s => (
+                                <div key={s.label} className="border-l border-teal/30 pl-4">
+                                    <div className="font-mono text-teal text-2xl font-bold">{s.val}</div>
+                                    <div className="text-slate-500 text-sm mt-1">{s.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section >
+            );
+        };
+
+        // ── Features ──────────────────────────────────────────────────────────────────
+        const DiagnosticShuffler = () => {
+            const labels = ['Capital Gains Report', 'DeFi Income Audit', 'NFT Tax Analysis'];
+            const [stack, setStack] = useState([0, 1, 2]);
+            useEffect(() => {
+                const id = setInterval(() => {
+                    setStack(s => { const n = [...s]; n.push(n.shift()); return n; });
+                }, 2800);
+                return () => clearInterval(id);
+            }, []);
+            const colors = ['bg-mid', 'bg-dim', 'bg-slate-900'];
+            return (
+                <div className="relative h-44 w-full">
+                    {stack.map((idx, pos) => (
+                        <div key={idx} className={`absolute w-full ${colors[pos]} border border-slate-700/60 rounded-2xl px-5 py-4 transition-all duration-700`}
+                            style={{ top: `${pos * 18}px`, opacity: 1 - pos * .3, zIndex: 3 - pos, transform: `scale(${1 - pos * .04}) translateY(${pos * 2}px)`, transitionTimingFunction: 'cubic-bezier(.34,1.56,.64,1)' }}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-teal/10 flex items-center justify-center border border-teal/30">
+                                    <span className="text-teal font-syne font-black text-lg">TS</span>
+                                </div>
+                                <span className="font-syne font-bold text-xl tracking-tighter text-white">Tax Slayer</span>
+                            </div>
+                            <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-teal rounded-full" style={{ width: `${60 + idx * 15}%`, transition: 'width 2.5s ease' }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const TelemetryTypewriter = () => {
+            const msgs = ['Scanning wallet 0x7f3a9c...', 'Calculating FIFO cost basis...', 'Identifying DeFi income events...', 'Classifying NFT disposals...', 'Aggregating staking rewards...', 'Generating tax summary...'];
+            const [msgIdx, setMsgIdx] = useState(0);
+            const [displayed, setDisplayed] = useState('');
+            const [charIdx, setCharIdx] = useState(0);
+            useEffect(() => {
+                if (charIdx < msgs[msgIdx].length) {
+                    const t = setTimeout(() => { setDisplayed(msgs[msgIdx].slice(0, charIdx + 1)); setCharIdx(c => c + 1); }, 45);
+                    return () => clearTimeout(t);
+                } else {
+                    const t = setTimeout(() => { setMsgIdx(m => (m + 1) % msgs.length); setDisplayed(''); setCharIdx(0); }, 1800);
+                    return () => clearTimeout(t);
+                }
+            }, [charIdx, msgIdx]);
+            return (
+                <div className="bg-charcoal border border-slate-700/60 rounded-2xl p-5 h-44 flex flex-col justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-teal" style={{ animation: 'pulse-dot 1.5s ease-in-out infinite' }} />
+                        <span className="text-teal text-xs font-mono font-bold tracking-widest">LIVE FEED</span>
+                    </div>
+                    <div className="font-mono text-sm text-slate-300 leading-relaxed min-h-[3rem]">
+                        <span>{displayed}</span>
+                        <span className="inline-block w-0.5 h-4 bg-amber ml-0.5 align-middle" style={{ animation: 'blink 1s step-end infinite' }} />
+                    </div>
+                    <div className="flex gap-2">
+                        {msgs.map((_, i) => <div key={i} className={`h-1 rounded-full flex-1 transition-all duration-500 ${i === msgIdx ? 'bg-teal' : 'bg-slate-700'}`} />)}
+                    </div>
+                </div>
+            );
+        };
+
+        const PaymentAnimator = () => {
+            const steps = ['Input Wallet', 'Generate Link', 'Pay $10 USDC', 'Verify On-chain', 'Report Ready'];
+            const [step, setStep] = useState(0);
+            useEffect(() => {
+                const id = setInterval(() => setStep(s => (s + 1) % steps.length), 1400);
+                return () => clearInterval(id);
+            }, []);
+            return (
+                <div className="bg-charcoal border border-slate-700/60 rounded-2xl p-5 h-44 flex flex-col justify-between">
+                    <div className="flex items-center gap-2">
+                        <BoltIcon />
+                        <span className="text-amber text-xs font-mono font-bold tracking-widest">PAYMENT FLOW</span>
+                    </div>
+                    <div className="flex items-center gap-1 overflow-hidden">
+                        {steps.map((s, i) => (
+                            <div key={s} className="flex items-center gap-1 flex-1">
+                                <div className={`flex-1 text-center text-[10px] font-mono py-1 px-1 rounded-lg transition-all duration-500 ${i === step ? 'bg-teal text-charcoal font-bold scale-105' : i < step ? 'bg-teal/20 text-teal' : 'bg-slate-800 text-slate-600'}`}>{s}</div>
+                                {i < steps.length - 1 && <div className={`w-2 h-px ${i < step ? 'bg-teal' : 'bg-slate-700'} transition-colors duration-500`} />}
+                            </div>
+                        ))}
+                    </div>
+                    {step === 4 && <div className="text-center text-teal font-mono text-sm" style={{ animation: 'float 2s ease-in-out infinite' }}>CSV + PDF delivered</div>}
+                    {step !== 4 && <div className="text-slate-600 text-xs font-mono text-center">Powered by x402 + MoonPay + Moralis</div>}
+                </div>
+            );
+        };
+
+        const Features = () => {
+            const ref = useRef(null);
+            useEffect(() => {
+                const ctx = gsap.context(() => {
+                    gsap.from('.feat-card', { opacity: 0, y: 60, stagger: .15, duration: .8, ease: 'power3.out', scrollTrigger: { trigger: '.feat-card', start: 'top 80%' } });
+                }, ref);
+                return () => ctx.revert();
+            }, []);
+            return (
+                <section id="features" ref={ref} className="py-32 px-8 max-w-6xl mx-auto">
+                    <div className="text-center mb-20">
+                        <div className="text-teal font-mono text-sm tracking-widest mb-4">TAX INTELLIGENCE SUITE</div>
+                        <h2 className="font-syne font-black text-5xl md:text-6xl text-white mb-4">Tools that think<br /><span className="font-serif italic text-teal">before you do.</span></h2>
+                        <p className="text-slate-400 text-lg max-w-xl mx-auto">From real-time Q&A to FIFO-calculated reports — the agent handles complexity so you don't have to.</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            { icon: <ShieldIcon />, title: 'Tax Intelligence', desc: 'Continuous analysis. Every DeFi event, NFT sale, and airdrop classified automatically.', children: <DiagnosticShuffler /> },
+                            { icon: <ChatIcon />, title: 'Live Agent Stream', desc: 'Ask anything free. Claude-powered answers in seconds — WhatsApp or Telegram.', children: <TelemetryTypewriter /> },
+                            { icon: <BoltIcon />, title: 'Auto-Report Engine', desc: 'Send your wallet, pay $10 USDC via x402, receive a full CSV + PDF report.', children: <PaymentAnimator /> }
+                        ].map((f, i) => (
+                            <div key={i} className="feat-card card-3d bg-mid border border-slate-800 rounded-3xl p-6 flex flex-col gap-6">
+                                <div className="flex items-center gap-3 text-teal">{f.icon}<span className="font-syne font-bold text-lg text-white">{f.title}</span></div>
+                                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+                                {f.children}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            );
+        };
+
+        // ── Philosophy ────────────────────────────────────────────────────────────────
+        const Philosophy = () => {
+            const ref = useRef(null);
+            useEffect(() => {
+                const ctx = gsap.context(() => {
+                    gsap.from('.phil-q1', { opacity: 0, x: -80, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.phil-q1', start: 'top 75%' } });
+                    gsap.from('.phil-q2', { opacity: 0, x: 80, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.phil-q2', start: 'top 75%' } });
+                    gsap.from('.phil-cta', { opacity: 0, y: 40, duration: .8, scrollTrigger: { trigger: '.phil-cta', start: 'top 80%' } });
+                }, ref);
+                return () => ctx.revert();
+            }, []);
+            return (
+                <section ref={ref} className="relative py-40 px-8 overflow-hidden" style={{ background: '#060A0D' }}>
+                    <div className="absolute inset-0 topo-bg opacity-30" />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg,rgba(0,212,170,.04) 0%,transparent 50%,rgba(245,158,11,.03) 100%)' }} />
+                    <div className="relative z-10 max-w-5xl mx-auto text-center">
+                        <div className="text-slate-600 font-mono text-sm tracking-widest mb-16">THE MANIFESTO</div>
+                        <div className="phil-q1 font-syne font-black text-3xl md:text-4xl lg:text-5xl text-slate-500 mb-8 leading-tight">
+                            Tax software asks:<br /><span className="font-serif italic">"What do you owe?"</span>
+                        </div>
+                        <div className="w-24 h-px bg-gradient-to-r from-transparent via-teal to-transparent mx-auto mb-8" />
+                        <div className="phil-q2 font-syne font-black text-3xl md:text-4xl lg:text-5xl text-white leading-tight mb-16">
+                            We ask:<br /><span className="font-serif italic text-teal">"What is optimal?"</span>
+                        </div>
+                        <p className="phil-cta text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
+                            Tax Slayer doesn't just report what happened. It understands DeFi, analyzes cost basis methods, identifies harvesting opportunities, and explains every calculation — in plain language, on your phone.
+                        </p>
+                    </div>
+                </section>
+            );
+        };
+
+        // ── Custom SVG Animations for Protocol cards ──────────────────────────────────
+        const HelixSVG = () => (
+            <svg viewBox="0 0 200 200" width="180" height="180">
+                <defs>
+                    <radialGradient id="hg" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#00D4AA" stopOpacity=".3" />
+                        <stop offset="100%" stopColor="#00D4AA" stopOpacity="0" />
+                    </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="90" fill="url(#hg)" />
+                <g style={{ transformOrigin: '100px 100px', animation: 'spin-slow 8s linear infinite' }}>
+                    {[0, 45, 90, 135].map(a => (
+                        <g key={a} transform={`rotate(${a} 100 100)`}>
+                            <ellipse cx="100" cy="100" rx="60" ry="20" fill="none" stroke="#00D4AA" strokeWidth="1.5" opacity=".6" />
+                        </g>
+                    ))}
+                </g>
+                <g style={{ transformOrigin: '100px 100px', animation: 'spin-slow 6s linear infinite reverse' }}>
+                    {[22.5, 67.5, 112.5, 157.5].map(a => (
+                        <g key={a} transform={`rotate(${a} 100 100)`}>
+                            <ellipse cx="100" cy="100" rx="40" ry="14" fill="none" stroke="#F59E0B" strokeWidth="1" opacity=".5" />
+                        </g>
+                    ))}
+                </g>
+                <circle cx="100" cy="100" r="8" fill="#00D4AA" opacity=".8" />
+            </svg>
+        );
+
+        const LaserGridSVG = () => (
+            <svg viewBox="0 0 200 160" width="200" height="160">
+                {Array.from({ length: 5 }, (_, r) => Array.from({ length: 7 }, (_, c) => (
+                    <rect key={`${r}-${c}`} x={8 + c * 28} y={8 + r * 28} width="22" height="22" rx="4" fill="none" stroke="#00D4AA" strokeWidth="1" opacity={.2 + Math.random() * .4} />
+                )))}
+                <rect x="0" y="0" width="200" height="4" fill="url(#lg)" style={{ animation: 'scan 3s ease-in-out infinite' }} />
+                <defs>
+                    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="transparent" />
+                        <stop offset="50%" stopColor="#00D4AA" stopOpacity=".8" />
+                        <stop offset="100%" stopColor="transparent" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        );
+
+        const EkgSVG = () => {
+            const d = "M0,50 L30,50 L40,20 L50,80 L60,50 L80,50 L90,30 L100,70 L110,50 L140,50 L150,15 L160,85 L170,50 L200,50";
+            return (
+                <svg viewBox="0 0 200 100" width="240" height="100">
+                    <path d={d} fill="none" stroke="#00D4AA" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="400" strokeDashoffset="0" style={{ animation: 'ekg 2s linear infinite' }} />
+                    <path d={d} fill="none" stroke="#00D4AA" strokeWidth="1" strokeLinecap="round" opacity=".2" />
+                    {[0, 50, 100, 150, 200].map(x => (
+                        <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="#00D4AA" strokeWidth=".5" opacity=".1" />
+                    ))}
+                </svg>
+            );
+        };
+
+        // ── Protocol (sticky stack) ───────────────────────────────────────────────────
+        const Protocol = () => {
+            const ref = useRef(null);
+            useEffect(() => {
+                const ctx = gsap.context(() => {
+                    const cards = gsap.utils.toArray('.proto-card');
+                    cards.forEach((card, i) => {
+                        if (i === cards.length - 1) return;
+                        gsap.to(card, {
+                            scale: .9, filter: 'blur(4px)', opacity: .5,
+                            scrollTrigger: { trigger: cards[i + 1], start: 'top 80%', end: 'top 30%', scrub: true }
+                        });
+                    });
+                }, ref);
+                return () => ctx.revert();
+            }, []);
+
+            const cards = [
+                {
+                    n: '01', title: 'Connect via Chat', sub: 'WhatsApp or Telegram', color: 'from-teal/10 to-transparent', accent: '#00D4AA',
+                    art: <HelixSVG />, body: 'Message the agent. Ask free tax questions instantly — staking, DeFi, NFTs, airdrops — the knowledge base covers US, UK, Nigeria and more. No signup required.'
+                },
+                {
+                    n: '02', title: 'Submit Your Wallet', sub: 'On-chain data via Moralis', color: 'from-amber/10 to-transparent', accent: '#F59E0B',
+                    art: <LaserGridSVG />, body: 'Send your EVM address. The agent fetches your full transaction history, classifies every event, and applies FIFO cost basis automatically across all chains.'
+                },
+                {
+                    n: '03', title: 'Pay & Receive Report', sub: 'x402 micropayment protocol', color: 'from-purple-900/20 to-transparent', accent: '#A78BFA',
+                    art: <EkgSVG />, body: 'Pay $10 USDC via the x402 payment link — verified on-chain through Zerion. Within 60 seconds, the agent sends your accountant-ready CSV + PDF directly to your chat.'
+                },
+            ];
+
+            return (
+                <section id="protocol" ref={ref} className="relative">
+                    <div className="sticky top-0 z-0 h-0 flex items-center justify-center">
+                        <div className="text-center absolute top-8 left-1/2 -translate-x-1/2 z-10">
+                            <div className="text-teal font-mono text-xs tracking-widest">HOW IT WORKS</div>
+                        </div>
+                    </div>
+                    {cards.map((c, i) => (
+                        <div key={i} className="sticky-card proto-card z-10" style={{ zIndex: 10 + i }}>
+                            <div className={`relative w-full max-w-5xl mx-auto px-8 bg-gradient-to-br ${c.color} bg-mid border border-slate-800 rounded-3xl p-12 flex flex-col lg:flex-row gap-12 items-center min-h-[70vh]`} style={{ boxShadow: `0 0 60px ${c.accent}15` }}>
+                                <div className="flex-1">
+                                    <div className="font-mono text-6xl font-bold mb-6" style={{ color: c.accent, opacity: .3 }}>{c.n}</div>
+                                    <div className="text-slate-500 font-mono text-sm tracking-widest mb-3">{c.sub}</div>
+                                    <h3 className="font-syne font-black text-4xl text-white mb-6">{c.title}</h3>
+                                    <p className="text-slate-400 text-lg leading-relaxed max-w-md">{c.body}</p>
+                                </div>
+                                <div className="flex-1 flex items-center justify-center opacity-90">{c.art}</div>
+                            </div>
+                        </div>
+                    ))}
+                </section>
+            );
+        };
+
+        // ── Pricing ───────────────────────────────────────────────────────────────────
+        const Pricing = () => {
+            const ref = useRef(null);
+            useEffect(() => {
+                const ctx = gsap.context(() => {
+                    gsap.from('.price-card', { opacity: 0, y: 50, stagger: .15, duration: .8, ease: 'power3.out', scrollTrigger: { trigger: '.price-card', start: 'top 80%' } });
+                }, ref);
+                return () => ctx.revert();
+            }, []);
+            const tiers = [
+                {
+                    name: 'Free', price: '$0', period: 'forever', badge: null, desc: 'Ask the agent anything about crypto taxes — unlimited questions, no wallet required.',
+                    features: ['Unlimited tax Q&A', 'US, UK, Nigeria coverage', 'DeFi, NFT, staking guidance', '14 topic deep-dive guide', 'WhatsApp + Telegram'],
+                    cta: 'Start Asking', ctaStyle: 'border border-slate-700 text-white hover:border-teal hover:text-teal'
+                },
+                {
+                    name: 'Report', price: '$10', period: 'per wallet', badge: 'MOST POPULAR', desc: 'Full auto-generated tax report from your wallet. Pay once. Get the file instantly.',
+                    features: ['Everything in Free', 'Full on-chain report', 'FIFO cost basis calc', 'Accountant-ready CSV', 'Summary PDF report', 'On-chain payment verify'],
+                    cta: 'Generate Report', ctaStyle: 'bg-teal text-charcoal font-bold hover:scale-105 glow'
+                },
+                {
+                    name: 'Enterprise', price: 'Custom', period: 'contact us', badge: null, desc: 'Bulk wallet processing, white-label API access, and custom x402 integration.',
+                    features: ['Everything in Report', 'Batch wallet processing', 'x402 server integration', 'White-label output', 'Priority support', 'Custom data retention'],
+                    cta: 'Contact Us', ctaStyle: 'border border-slate-700 text-white hover:border-amber hover:text-amber'
+                },
+            ];
+            return (
+                <section id="pricing" ref={ref} className="py-32 px-8" style={{ background: '#060A0D' }}>
+                    <div className="max-w-5xl mx-auto">
+                        <div className="text-center mb-20">
+                            <div className="text-teal font-mono text-sm tracking-widest mb-4">PRICING</div>
+                            <h2 className="font-syne font-black text-5xl text-white mb-4">Simple.<span className="font-serif italic text-teal"> Transparent.</span></h2>
+                            <p className="text-slate-400 text-lg">Pay per action. No subscriptions. No accounts. Just a wallet.</p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {tiers.map((t, i) => (
+                                <div key={i} className={`price-card relative rounded-3xl p-8 flex flex-col gap-6 border transition-all duration-300 ${i === 1 ? 'bg-mid border-teal/40 glow scale-105' : 'bg-charcoal border-slate-800 hover:border-slate-700'}`}>
+                                    {t.badge && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal text-charcoal text-xs font-mono font-bold px-4 py-1 rounded-full">{t.badge}</div>}
+                                    <div>
+                                        <div className="font-syne font-bold text-slate-400 text-sm tracking-widest mb-2">{t.name.toUpperCase()}</div>
+                                        <div className="font-syne font-black text-4xl text-white">{t.price}</div>
+                                        <div className="text-slate-600 text-sm font-mono">{t.period}</div>
+                                    </div>
+                                    <p className="text-slate-400 text-sm leading-relaxed">{t.desc}</p>
+                                    <ul className="space-y-3 flex-1">
+                                        {t.features.map(f => (
+                                            <li key={f} className="flex items-center gap-3 text-slate-300 text-sm">
+                                                <span className="w-4 h-4 rounded-full bg-teal/20 text-teal flex items-center justify-center text-xs">+</span>
+                                                {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <a href="#" className={`mt-4 w-full py-3 rounded-2xl text-center font-syne font-bold text-sm transition-all ${t.ctaStyle}`}>{t.cta}</a>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ── Partners ──────────────────────────────────────────────────────────────────
+        const Partners = () => (
+            <section className="py-16 px-8 border-y border-slate-800/50">
+                <div className="max-w-5xl mx-auto text-center">
+                    <div className="text-slate-600 font-mono text-xs tracking-widest mb-8">BUILT WITH OWS HACKATHON PARTNERS</div>
+                    <div className="flex flex-wrap justify-center items-center gap-8">
+                        {['MoonPay', 'Zerion', 'Moralis', 'x402', 'Open Wallet Standard'].map(p => (
+                            <div key={p} className="text-slate-600 font-syne font-bold text-sm hover:text-teal transition-colors cursor-default">{p}</div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        );
+
+        // ── Footer ────────────────────────────────────────────────────────────────────
+        const Footer = () => (
+            <footer className="bg-charcoal rounded-t-[3rem] mt-0 pt-20 pb-12 px-8" style={{ borderTop: '1px solid #1f2937' }}>
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-4 gap-12 mb-16">
+                        <div className="md:col-span-2">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-8 h-8 rounded-full bg-teal flex items-center justify-center">
+                                    <span className="text-charcoal font-syne font-black text-xs">TS</span>
+                                </div>
+                                <span className="font-syne font-black text-xl">Tax Slayer</span>
+                            </div>
+                            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
+                                The AI crypto tax agent that lives in your chat. Free Q&A, $10 auto-reports, powered by x402 and the Open Wallet Standard.
+                            </p>
+                            <div className="flex items-center gap-2 mt-6">
+                                <div className="w-2 h-2 rounded-full bg-green-400" style={{ animation: 'pulse-dot 2s infinite' }} />
+                                <span className="text-slate-500 text-xs font-mono">Agent Online / x402 Server Operational</span>
+                            </div>
+                        </div>
+                        {[
+                            { title: 'Product', links: ['Features', 'Protocol', 'Pricing', 'Changelog'] },
+                            { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Disclaimer', 'FOSS License'] },
+                        ].map(col => (
+                            <div key={col.title}>
+                                <div className="font-syne font-bold text-slate-300 text-sm mb-4">{col.title}</div>
+                                <ul className="space-y-3">
+                                    {col.links.map(l => <li key={l}><a href="#" className="text-slate-500 text-sm hover:text-teal transition-colors">{l}</a></li>)}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="text-slate-600 text-xs font-mono">Tax Slayer v1.0 &mdash; OWS Hackathon 2026 Submission</div>
+                        <div className="text-slate-600 text-xs font-mono">Not financial advice. DYOR. Consult a licensed CPA.</div>
+                    </div>
+                </div>
+            </footer>
+        );
+
+        // ── App ───────────────────────────────────────────────────────────────────────
+        const App = () => (
+            <>
+                <Navbar />
+                <Hero />
+                <Partners />
+                <Features />
+                <Philosophy />
+                <Protocol />
+                <Pricing />
+                <Footer />
+            </>
+        );
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+
+</html>

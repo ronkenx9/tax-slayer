@@ -1,0 +1,475 @@
+import 'dotenv/config';
+import { Telegraf, Context } from 'telegraf';
+import * as fs from 'fs';
+import { initiatePayment, checkPayment, verifyTxHash, extractTxHash, type PaymentSession } from './src/payment.js';
+import { fetchTaxReport } from './src/zerion.js';
+import { generateReports } from './src/report.js';
+import {
+  getFreeTierWelcome,
+  getTaxGuideMenu,
+  getTaxGuide,
+  answerTaxQuestion,
+} from './src/knowledge.js';
+import { processMessage, isTaxQuestion, isGuideRequest } from './src/agent.js';
+
+// ─── Session State ────────────────────────────────────────────────────────────
+
+interface Session {
+  wallet?: string;
+  paymentSession?: PaymentSession;
+  paid: boolean;
+  tier: 'free' | 'paid';
+  waitingFor?: 'wallet' | 'payment_confirm';
+  history: Array<{ role: string; content: string }>;
+}
+
+const sessions = new Map<number, Session>();
+
+function getSession(userId: number): Session {
+  if (!sessions.has(userId)) {
+    sessions.set(userId, { paid: false, tier: 'free', history: [] });
+  }
+  return sessions.get(userId)!;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function extractWalletAddress(text: string): string | null {
+  const evm = text.match(/0x[a-fA-F0-9]{40}/);
+  if (evm) return evm[0];
+  const sol = text.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);
+  if (sol) return sol[0];
+  return null;
+}
+
+function isTopicNumber(text: string): string | null {
+  const match = text.trim().match(/^(\d{1,2})$/);
+  return match ? match[1] : null;
+}
+
+function buildPaymentMessage(ps: PaymentSession): string {
+  return [
+    '💳 *Tax Report — $10 USDC*',
+    '',
+    '👇 Click to pay:',
+    ps.paymentUrl,
+    '',
+    'After paying, paste your *transaction hash* (0x...) here for instant verification.',
+    '_Or reply_ *paid* _to scan automatically._',
+    '',
+    `Reference: \`${ps.ref}\` | 30 min to complete`,
+    'Type /cancel to abort.',
+  ].join('\n');
+}
+
+// ─── Payment Flow ─────────────────────────────────────────────────────────────
+// Payment comes FIRST — wallet address is collected after payment is confirmed.
+
+async function startPaymentFlow(ctx: Context, userId: number): Promise<void> {
+  const session = getSession(userId);
+  await ctx.reply('💳 Generating your payment link...', { parse_mode: 'Markdown' });
+  const paymentSession = await initiatePayment('pending'); // wallet TBD after payment
+  session.paymentSession = paymentSession;
+  session.waitingFor = 'payment_confirm';
+  session.tier = 'paid';
+  sessions.set(userId, session);
+  await ctx.reply(buildPaymentMessage(paymentSession), { parse_mode: 'Markdown' });
+}
+
+// ─── Report Generation ────────────────────────────────────────────────────────
+
+async function generateAndSendReport(ctx: Context, userId: number, wallet: string): Promise<void> {
+  await ctx.reply(
+    '🔄 Payment confirmed! Pulling your on-chain history via Zerion...\n\n_20–60 seconds for wallets with many transactions._',
+    { parse_mode: 'Markdown' },
+  );
+
+  let txData: Awaited<ReturnType<typeof fetchTaxReport>>;
+  try {
+    txData = await fetchTaxReport(wallet);
+  } catch (err) {
+    await ctx.reply(`❌ Failed to fetch data: ${(err as Error).message}\n\nTry again or contact support.`);
+    return;
+  }
+
+  if (txData.transactions.length === 0) {
+    await ctx.reply(
+      `⚠️ No transactions found for \`${wallet}\` in 2025.\n\nCheck the address and try again.`,
+      { parse_mode: 'Markdown' },
+    );
+    return;
+  }
+
+  await ctx.reply(
+    `📊 Found *${txData.transactions.length} transactions* across ${txData.chains.join(', ')}.\n\n⚙️ Generating CSV + PDF...`,
+    { parse_mode: 'Markdown' },
+  );
+
+  let paths: { csv: string; pdf: string };
+  try {
+    paths = await generateReports(wallet, txData);
+  } catch (err) {
+    await ctx.reply(`❌ Report generation failed: ${(err as Error).message}`);
+    return;
+  }
+
+  await ctx.replyWithDocument(
+    { source: fs.createReadStream(paths.csv), filename: `TaxSlayer-${wallet.slice(0, 8)}-2025.csv` },
+    { caption: '📊 Full transaction CSV — import into Koinly, TurboTax, CoinTracker' },
+  );
+
+  await ctx.replyWithDocument(
+    { source: fs.createReadStream(paths.pdf), filename: `TaxSlayer-${wallet.slice(0, 8)}-2025-Summary.pdf` },
+    { caption: '📋 Summary PDF — accountant-ready report' },
+  );
+
+  const { summary } = txData;
+  const pnl = summary.totalPnL >= 0 ? `+$${summary.totalPnL.toFixed(2)}` : `-$${Math.abs(summary.totalPnL).toFixed(2)}`;
+  await ctx.reply(
+    [
+      '✅ *Tax Report Complete*',
+      '',
+      `Wallet: \`${wallet}\``,
+      `Period: ${summary.periodStart} → ${summary.periodEnd}`,
+      `Chains: ${txData.chains.join(', ')}`,
+      '',
+      '📈 *Summary*',
+      `• Total transactions: ${txData.transactions.length}`,
+      `• Taxable events: ${summary.taxableEvents}`,
+      `• Total inflows: $${summary.totalInflows.toFixed(2)}`,
+      `• Total outflows: $${summary.totalOutflows.toFixed(2)}`,
+      `• Realized PnL: ${pnl}`,
+      '',
+      '📂 Both files attached above.',
+      '',
+      '_Generated by Tax Slayer Agent via Zerion + OWS + x402_',
+    ].join('\n'),
+    { parse_mode: 'Markdown' },
+  );
+
+  await ctx.reply(
+    '🎉 *Thank you for choosing Tax Slayer Agent!*\n\n_Your report was generated using Zerion on-chain data, FIFO cost basis, and delivered via x402 protocol._\n\nType /report anytime to run another.',
+    { parse_mode: 'Markdown' },
+  );
+
+  try { fs.unlinkSync(paths.csv); } catch { /* noop */ }
+  try { fs.unlinkSync(paths.pdf); } catch { /* noop */ }
+  sessions.delete(userId);
+}
+
+// ─── Bot Setup ────────────────────────────────────────────────────────────────
+
+export function startTelegramBot(): void {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+
+  if (!token) {
+    console.warn('[TelegramBot] TELEGRAM_BOT_TOKEN not set — Telegram bot disabled.');
+    return;
+  }
+
+  const bot = new Telegraf(token);
+
+  // ── /start ────────────────────────────────────────────────────────────────
+  bot.command('start', async (ctx) => {
+    await ctx.reply(getFreeTierWelcome(), { parse_mode: 'Markdown' });
+  });
+
+  // ── /help ─────────────────────────────────────────────────────────────────
+  bot.command('help', async (ctx) => {
+    await ctx.reply(
+      [
+        '📖 *Tax Slayer Agent — Commands*',
+        '',
+        '/start — Welcome message',
+        '/guide — Crypto tax self-help guide (free)',
+        '/guide <number> — Deep-dive on a specific topic',
+        '/tax <question> — Ask any crypto tax question (free)',
+        '/report — Generate a full on-chain tax report ($10 USDC)',
+        '/status — Check your current session',
+        '/cancel — Cancel the current flow',
+        '',
+        `💰 Report price: $${process.env.REPORT_PRICE_USD ?? '10'} USDC`,
+        '_CSV + PDF delivered. Powered by Zerion + OWS + x402._',
+      ].join('\n'),
+      { parse_mode: 'Markdown' },
+    );
+  });
+
+  // ── /guide ────────────────────────────────────────────────────────────────
+  bot.command('guide', async (ctx) => {
+    const userId = ctx.from.id;
+    const session = getSession(userId);
+
+    // Check if topic was inlined: /guide 3 or /guide staking
+    const inline = ctx.message.text.replace(/^\/guide\s*/i, '').trim();
+
+    if (inline) {
+      const answer = getTaxGuide(inline);
+      if (answer) {
+        session.history.push({ role: 'user', content: `/guide ${inline}` });
+        session.history.push({ role: 'assistant', content: answer });
+        sessions.set(userId, session);
+        await ctx.reply(answer, { parse_mode: 'Markdown' });
+        return;
+      }
+    }
+
+    await ctx.reply(getTaxGuideMenu(), { parse_mode: 'Markdown' });
+  });
+
+  // ── /tax <question> ───────────────────────────────────────────────────────
+  bot.command('tax', async (ctx) => {
+    const userId = ctx.from.id;
+    const session = getSession(userId);
+
+    const question = ctx.message.text.replace(/^\/tax\s*/i, '').trim();
+
+    if (!question) {
+      await ctx.reply(
+        'Ask me any crypto tax question!\n\nExample: `/tax Are staking rewards taxable?`',
+        { parse_mode: 'Markdown' },
+      );
+      return;
+    }
+
+    session.history.push({ role: 'user', content: question });
+    sessions.set(userId, session);
+
+    try {
+      // Use full AI agent for /tax questions
+      const response = await processMessage(question, { history: session.history, userName: ctx.from.first_name });
+      const replyText = response.text || answerTaxQuestion(question) || "I'm not sure about that one — try asking differently or type /guide for topics.";
+
+      session.history.push({ role: 'assistant', content: replyText });
+      sessions.set(userId, session);
+
+      await ctx.reply(replyText, { parse_mode: 'Markdown' });
+    } catch {
+      const fallback = answerTaxQuestion(question) ?? "I'm having trouble answering that right now. Try again in a second!";
+      await ctx.reply(fallback, { parse_mode: 'Markdown' });
+    }
+  });
+
+  // ── /report ───────────────────────────────────────────────────────────────
+  // Payment-first flow: start payment immediately, wallet collected after confirmation.
+  bot.command('report', async (ctx) => {
+    const userId = ctx.from.id;
+    const session = getSession(userId);
+
+    session.paid = false;
+    sessions.set(userId, session);
+    await startPaymentFlow(ctx, userId);
+  });
+
+  // ── /status ───────────────────────────────────────────────────────────────
+  bot.command('status', async (ctx) => {
+    const userId = ctx.from.id;
+    const session = sessions.get(userId);
+
+    if (!session) {
+      await ctx.reply('No active session. Use /start to begin or /report to generate a report.');
+      return;
+    }
+
+    const lines = [
+      '📋 *Your Session*',
+      '',
+      `• Tier: *${session.tier}*`,
+      `• Paid: *${session.paid ? 'Yes ✅' : 'No'}*`,
+      `• Wallet: ${session.wallet ? `\`${session.wallet}\`` : '_not set_'}`,
+      `• Waiting for: ${session.waitingFor ?? '_nothing_'}`,
+      `• Messages in history: ${session.history.length}`,
+    ];
+
+    if (session.paymentSession) {
+      const minsLeft = Math.floor(Math.max(0, session.paymentSession.expiresAt - Date.now()) / 60_000);
+      lines.push(`• Payment ref: \`${session.paymentSession.ref}\``);
+      lines.push(`• Payment expires in: ${minsLeft} min`);
+    }
+
+    await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+  });
+
+  // ── /cancel ───────────────────────────────────────────────────────────────
+  bot.command('cancel', async (ctx) => {
+    sessions.delete(ctx.from.id);
+    await ctx.reply('❌ Session cleared. Use /start to begin or /report to start a new report.');
+  });
+
+  // ── @mention in group chats ───────────────────────────────────────────────
+  bot.on('message', async (ctx, next) => {
+    const text = ('text' in ctx.message ? ctx.message.text : '') ?? '';
+    const botUsername = ctx.botInfo?.username ?? '';
+    if (!botUsername || !text.includes(`@${botUsername}`)) return next();
+    const question = text.replace(new RegExp(`@${botUsername}`, 'g'), '').trim();
+    if (!question) {
+      await ctx.reply('You tagged me! Ask a crypto tax question or type /guide for topics.');
+      return;
+    }
+    const answer = answerTaxQuestion(question) ?? "Not sure about that — try a more specific question or type /guide!";
+    await ctx.reply(answer, { parse_mode: 'Markdown' });
+  });
+
+  // ── Free-form messages ────────────────────────────────────────────────────
+  bot.on('text', async (ctx) => {
+    if (ctx.message.text.startsWith('/')) return;
+
+    const userId = ctx.from.id;
+    const session = getSession(userId);
+    const text = ctx.message.text.trim();
+
+    // Topic number pick
+    const topicNum = isTopicNumber(text);
+    if (topicNum) {
+      const answer = getTaxGuide(topicNum);
+      if (answer) {
+        session.history.push({ role: 'user', content: text });
+        session.history.push({ role: 'assistant', content: answer });
+        sessions.set(userId, session);
+        await ctx.reply(answer, { parse_mode: 'Markdown' });
+        return;
+      }
+    }
+
+    // ── Step 1: Waiting for payment confirmation ───────────────────────────
+    if (session.waitingFor === 'payment_confirm' && session.paymentSession) {
+      const lower = text.toLowerCase();
+
+      // Primary: user pasted a tx hash — most reliable
+      const txHash = extractTxHash(text);
+      if (txHash) {
+        await ctx.reply(`🔍 Got your tx hash. Verifying on-chain via Zerion...`);
+        let verified = false;
+        try { verified = await verifyTxHash(txHash, session.paymentSession); } catch (err) {
+          await ctx.reply(`❌ Verification error: ${(err as Error).message}`); return;
+        }
+        if (verified) {
+          session.paid = true;
+          session.tier = 'paid';
+          session.waitingFor = 'wallet';
+          sessions.set(userId, session);
+          await ctx.reply(
+            '✅ Payment confirmed! Now send me your wallet address.\n\n• EVM: `0x...`\n• Solana: base58 address',
+            { parse_mode: 'Markdown' },
+          );
+        } else {
+          await ctx.reply(
+            '❌ Could not verify that tx. Check:\n• You sent *USDC* (not ETH)\n• On *Ethereum* mainnet\n• Amount is $10\n• Tx is confirmed\n\nPaste the hash again or type /cancel.',
+            { parse_mode: 'Markdown' },
+          );
+        }
+        return;
+      }
+
+      // Fallback: keyword "paid" — scan recent transfers
+      if (lower.includes('paid') || lower.includes('done') || lower.includes('sent')) {
+        await ctx.reply('🔍 Scanning for your payment on-chain...');
+        let verified = false;
+        try { verified = await checkPayment(session.paymentSession); } catch (err) {
+          await ctx.reply(`❌ Payment check error: ${(err as Error).message}`); return;
+        }
+        if (verified) {
+          session.paid = true;
+          session.tier = 'paid';
+          session.waitingFor = 'wallet';
+          sessions.set(userId, session);
+          await ctx.reply(
+            '✅ Payment confirmed! Now send me your wallet address.\n\n• EVM: `0x...`\n• Solana: base58 address',
+            { parse_mode: 'Markdown' },
+          );
+        } else {
+          await ctx.reply(
+            '⏳ Not found yet — takes 1–2 min to confirm.\n\nFor instant verification, paste your *transaction hash* (0x...).\nType /cancel to abort.',
+            { parse_mode: 'Markdown' },
+          );
+        }
+        return;
+      }
+
+      if (lower.includes('resend') || lower.includes('link')) {
+        await ctx.reply(buildPaymentMessage(session.paymentSession), { parse_mode: 'Markdown' });
+        return;
+      }
+
+      // Anything else while waiting for payment — remind them
+      await ctx.reply(
+        '⏳ Waiting for your payment. Click the link above to pay, then paste your *transaction hash* (0x...) or reply *paid*.\n\nType /cancel to abort.',
+        { parse_mode: 'Markdown' },
+      );
+      return;
+    }
+
+    // ── Step 2: Payment confirmed — now collect wallet address ────────────
+    if (session.waitingFor === 'wallet') {
+      const wallet = extractWalletAddress(text);
+      if (!wallet) {
+        await ctx.reply(
+          "❌ Couldn't find a wallet address. Please send your EVM (0x...) or Solana address.",
+          { parse_mode: 'Markdown' },
+        );
+        return;
+      }
+      session.wallet = wallet;
+      session.waitingFor = undefined;
+      sessions.set(userId, session);
+      await generateAndSendReport(ctx, userId, wallet);
+      return;
+    }
+
+    // Guide request
+    if (isGuideRequest(text)) {
+      await ctx.reply(getTaxGuideMenu(), { parse_mode: 'Markdown' });
+      return;
+    }
+
+    // Full AI conversation (tax question or anything else)
+    if (isTaxQuestion(text) || text.length > 15) {
+      session.history.push({ role: 'user', content: text });
+      sessions.set(userId, session);
+
+      try {
+        const response = await processMessage(text, { history: session.history, userName: ctx.from.first_name });
+
+        // Handle guide intents from AI
+        if (response.intent === 'guide_request') {
+          await ctx.reply(getTaxGuideMenu(), { parse_mode: 'Markdown' }); return;
+        }
+        if (response.intent === 'guide_topic' && response.guideTopic) {
+          const guide = getTaxGuide(response.guideTopic);
+          await ctx.reply(guide ?? response.text, { parse_mode: 'Markdown' }); return;
+        }
+        if (response.intent === 'report_request' || response.walletAddress) {
+          // Payment-first: start payment immediately regardless of whether wallet was given
+          await startPaymentFlow(ctx, userId);
+          return;
+        }
+
+        const replyText = response.text || "Not sure about that — type /guide for topics!";
+        session.history.push({ role: 'assistant', content: replyText });
+        sessions.set(userId, session);
+        await ctx.reply(replyText, { parse_mode: 'Markdown' });
+
+      } catch {
+        const fallback = answerTaxQuestion(text) ?? "I'm having a moment — try again or type /guide for topics!";
+        await ctx.reply(fallback, { parse_mode: 'Markdown' });
+      }
+      return;
+    }
+
+    // Default nudge
+    await ctx.reply(
+      "💡 I'm Tax Slayer — I answer crypto tax questions free and generate full wallet reports for $10 USDC.\n\n• /guide — browse tax topics\n• /tax <question> — ask anything\n• /report — get your full on-chain report",
+      { parse_mode: 'Markdown' },
+    );
+  });
+
+  // ── Launch ────────────────────────────────────────────────────────────────
+  bot.launch({ dropPendingUpdates: true })
+    .then(() => console.log('[TelegramBot] Tax Slayer connected and polling.'))
+    .catch((err) => console.error('[TelegramBot] Failed to launch:', err));
+
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+  console.log('[TelegramBot] Starting Tax Slayer Telegram bot...');
+}
