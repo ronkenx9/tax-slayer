@@ -220,6 +220,26 @@
                 <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
         );
+        const SwordIcon = ({ size = 28, color = "#FF3344" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2V6M12 6L14 8M12 6L10 8M12 6V18M12 18L10 20M12 18L14 20M9 14H15" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 6V18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px ' + color + ')' }} />
+            </svg>
+        );
+
+        // ── Sword Logo SVG ────────────────────────────────────────────────────────────
+        const SwordLogo = ({ size = 28, glow = true }) => (
+            <svg width={size} height={Math.round(size * 1.4)} viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg"
+                style={glow ? { filter: 'drop-shadow(0 0 6px #ff2200) drop-shadow(0 0 12px #ff220066)' } : {}}>
+                <rect x="10" y="0" width="8" height="5" rx="1" fill="white" />
+                <rect x="12" y="5" width="4" height="7" fill="white" />
+                <rect x="1" y="12" width="26" height="4" rx="1" fill="white" />
+                <rect x="10" y="16" width="3" height="16" fill="white" />
+                <rect x="15" y="16" width="3" height="16" fill="white" />
+                <polygon points="10,32 18,32 14,40" fill="white" />
+                <rect x="10" y="22" width="8" height="2" fill="#0A0E12" opacity="0.7" />
+            </svg>
+        );
 
 
         // ── Binary Rain ───────────────────────────────────────────────────────────────
@@ -268,9 +288,7 @@
                 <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-5xl">
                     <div className={`pill-nav flex items-center justify-between px-6 py-3 rounded-full transition-all duration-500 ${scrolled ? 'bg-charcoal/80 border border-teal/20 glow' : 'bg-transparent'}`}>
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-teal flex items-center justify-center">
-                                <span className="text-charcoal font-syne font-black text-sm">TS</span>
-                            </div>
+                            <SwordIcon size={24} color="#00D4AA" />
                             <span className="font-syne font-bold text-lg tracking-tight">Tax Slayer</span>
                         </div>
                         <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
@@ -309,6 +327,9 @@
 
 
                     <div className="relative z-10 max-w-6xl mx-auto w-full">
+                        <div className="hero-tag mb-8">
+                            <SwordLogo size={64} glow={true} />
+                        </div>
                         <h1 className="font-syne font-black leading-[.95] mb-6">
                             <div className="hero-line1 text-[clamp(2.5rem,7vw,7.5rem)] text-white">The IRS never</div>
                             <div className="hero-line1 text-[clamp(2.5rem,7vw,7.5rem)] text-white">sleeps.</div>
@@ -363,8 +384,8 @@
                         <div key={idx} className={`absolute w-full ${colors[pos]} border border-slate-700/60 rounded-2xl px-5 py-4 transition-all duration-700`}
                             style={{ top: `${pos * 18}px`, opacity: 1 - pos * .3, zIndex: 3 - pos, transform: `scale(${1 - pos * .04}) translateY(${pos * 2}px)`, transitionTimingFunction: 'cubic-bezier(.34,1.56,.64,1)' }}>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-teal/10 flex items-center justify-center border border-teal/30">
-                                    <span className="text-teal font-syne font-black text-lg">TS</span>
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-amber-600 flex items-center justify-center shadow-[0_0_15px_rgba(220,38,38,0.4)]">
+                                    <SwordIcon size={22} color="#fff" />
                                 </div>
                                 <span className="font-syne font-bold text-xl tracking-tighter text-white">Tax Slayer</span>
                             </div>
@@ -693,10 +714,8 @@
                 <div className="max-w-6xl mx-auto">
                     <div className="grid md:grid-cols-4 gap-12 mb-16">
                         <div className="md:col-span-2">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 rounded-full bg-teal flex items-center justify-center">
-                                    <span className="text-charcoal font-syne font-black text-xs">TS</span>
-                                </div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <SwordLogo size={32} glow={true} />
                                 <span className="font-syne font-black text-xl">Tax Slayer</span>
                             </div>
                             <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
