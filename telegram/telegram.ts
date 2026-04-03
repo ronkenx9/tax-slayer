@@ -261,6 +261,33 @@ export function startTelegramBot(): void {
     await startPaymentFlow(ctx, userId);
   });
 
+  // ── /demo ─────────────────────────────────────────────────────────────────
+  // OWS Hackathon sponsored free report for judges — bypasses payment.
+  bot.command('demo', async (ctx) => {
+    const userId = ctx.from.id;
+    const session = getSession(userId);
+
+    session.paid = true;
+    session.tier = 'paid';
+    session.waitingFor = 'wallet';
+    sessions.set(userId, session);
+
+    await ctx.reply(
+      [
+        '🎟️ *OWS Hackathon — Sponsored Demo Activated!*',
+        '',
+        'Your report is sponsored by the Open Wallet Standard. No payment needed.',
+        '',
+        '📬 Send me your wallet address to generate your free tax report:',
+        '• EVM: `0x...`',
+        '• Solana: base58 address',
+        '',
+        '_Full CSV + PDF report — powered by Zerion + x402 + Moralis._',
+      ].join('\n'),
+      { parse_mode: 'Markdown' },
+    );
+  });
+
   // ── /status ───────────────────────────────────────────────────────────────
   bot.command('status', async (ctx) => {
     const userId = ctx.from.id;

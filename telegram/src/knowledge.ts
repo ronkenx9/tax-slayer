@@ -388,17 +388,22 @@ export function answerTaxQuestion(question: string): string | null {
  */
 export function getFreeTierWelcome(): string {
   return (
-    "👋 Hey! I'm *TaxSlayer* — your AI crypto tax assistant, built on the Open Wallet Standard.\n\n" +
-    '🆓 *Free — Ask me anything:*\n' +
-    '• "Are staking rewards taxable?"\n' +
-    '• "What\'s the wash sale rule for crypto?"\n' +
-    '• "How does Nigeria tax crypto?"\n' +
-    '• Type *guide* for the full self-help menu 📖\n\n' +
-    '💰 *Paid ($10 USDC) — Auto tax report:*\n' +
-    '• Your full wallet transaction history\n' +
-    '• FIFO cost basis calculated automatically\n' +
-    '• Accountant-ready CSV + PDF\n' +
-    '• Just send your wallet address and pay via the link I\'ll generate\n\n' +
+    "👋 Hey! I'm *Tax Slayer* — your AI crypto tax assistant, built on the Open Wallet Standard.\\n\\n" +
+    '🎟️ *OWS Hackathon Demo — Free Sponsored Report:*\\n' +
+    'Judges can get a full on-chain tax report for free, sponsored by OWS.\\n' +
+    '➡️ Just type /demo to activate\\n\\n' +
+    '─────────────────────\\n\\n' +
+    '🆓 *Free — Ask me anything:*\\n' +
+    '• "Are staking rewards taxable?"\\n' +
+    '• "What\'s the wash sale rule for crypto?"\\n' +
+    '• "How does Nigeria tax crypto?"\\n' +
+    '• Type /guide for the full self-help menu 📖\\n\\n' +
+    '💰 *Regular Plan ($10 USDC) — Auto tax report:*\\n' +
+    '• Full wallet transaction history\\n' +
+    '• FIFO cost basis calculated automatically\\n' +
+    '• Accountant-ready CSV + PDF\\n' +
+    '• Type /report to start\\n\\n' +
     'What do you need help with? 🚀'
   );
 }
+
