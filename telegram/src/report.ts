@@ -106,7 +106,7 @@ async function generatePDF(wallet: string, data: TaxReportData): Promise<string>
   y -= 16;
   drawKV(page, regularFont, boldFont, 'Chains', data.chains.join(', '), margin, y);
   y -= 16;
-  drawKV(page, regularFont, boldFont, 'Period', `${formatDate(data.summary.periodStart)} → ${formatDate(data.summary.periodEnd)}`, margin, y);
+  drawKV(page, regularFont, boldFont, 'Period', `${formatDate(data.summary.periodStart)} to ${formatDate(data.summary.periodEnd)}`, margin, y);
   y -= 30;
 
   // ── Summary Table ─────────────────────────────────────────────────────────
