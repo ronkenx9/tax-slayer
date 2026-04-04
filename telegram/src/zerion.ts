@@ -6,8 +6,6 @@
  * Fallback: Returns empty dataset gracefully with a console warning
  */
 
-import * as fs from 'fs';
-
 const ZERION_BASE = 'https://api.zerion.io/v1';
 const API_KEY = process.env.ZERION_API_KEY ?? '';
 
@@ -130,11 +128,20 @@ async function fetchAllTransactions(
     console.log(`[Zerion] Page ${page}: ${count} transactions returned`);
 
     for (const tx of result.data ?? []) {
-      // Include all non-failed transactions
+      // Include only non-failed 2025 transactions
       if (tx.attributes.status === 'failed') continue;
+      const year = new Date(tx.attributes.mined_at).getFullYear();
+      if (year !== 2025) continue;
       txs.push(tx);
       const chain = tx.relationships?.chain?.data?.id ?? 'ethereum';
       chains.add(chain);
+    }
+
+    // Stop paginating once we've passed 2025 (API returns newest first)
+    const lastTx = result.data?.[result.data.length - 1];
+    if (lastTx) {
+      const lastYear = new Date(lastTx.attributes.mined_at).getFullYear();
+      if (lastYear < 2025) break;
     }
 
     const nextUrl = result.links?.next ?? null;

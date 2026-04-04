@@ -16,7 +16,7 @@
 
 import express, { type Request, type Response } from 'express';
 import * as crypto from 'crypto';
-import { fetchTaxReport } from './allium.js';
+import { fetchTaxReport } from './zerion.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -283,7 +283,10 @@ export function startX402Server(): void {
   app.get('/health', handleHealth);
 
   app.get('/pay/:ref', (req: Request, res: Response) => {
-    const { ref } = req.params;
+    // Sanitize ref: only allow alphanumeric, hyphens, underscores (TSR-timestamp-hex format)
+    const rawRef = req.params.ref ?? '';
+    const ref = rawRef.replace(/[^a-zA-Z0-9\-_]/g, '').slice(0, 64);
+    if (!ref) { res.status(400).json({ error: 'Invalid payment reference' }); return; }
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -256,7 +256,7 @@ export async function processMessage(
         .trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      // Claude returned non-JSON — extract text and classify
+      // Groq/Llama returned non-JSON — extract text and classify
       const fallback = buildFallbackResponse(userMessage, context.userName);
       if (detectedWallet) fallback.walletAddress = detectedWallet;
       // Use the raw text as the reply if it looks like a real answer

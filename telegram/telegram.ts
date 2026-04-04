@@ -34,24 +34,39 @@ interface Session {
   waitingFor?: 'wallet' | 'payment_confirm';
   history: Array<{ role: string; content: string }>;
   reportSummary?: ReportSummary; // Kept after report delivery for follow-up Q&A
+  lastActive: number; // unix ms — used for TTL eviction
 }
 
 const sessions = new Map<number, Session>();
 
+// Evict sessions idle for more than 2 hours to prevent unbounded memory growth
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, session] of sessions) {
+    if (now - session.lastActive > SESSION_TTL_MS) {
+      sessions.delete(userId);
+    }
+  }
+}, 30 * 60 * 1000); // check every 30 minutes
+
 function getSession(userId: number): Session {
   if (!sessions.has(userId)) {
-    sessions.set(userId, { paid: false, tier: 'free', history: [] });
+    sessions.set(userId, { paid: false, tier: 'free', history: [], lastActive: Date.now() });
   }
-  return sessions.get(userId)!;
+  const session = sessions.get(userId)!;
+  session.lastActive = Date.now(); // refresh on every access
+  return session;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractWalletAddress(text: string): string | null {
+  // EVM only — Solana support coming soon.
+  // The previous base58 regex [1-9A-HJ-NP-Za-km-z]{32,44} was too greedy
+  // and matched random English text/words, causing false positives.
   const evm = text.match(/0x[a-fA-F0-9]{40}/);
   if (evm) return evm[0];
-  const sol = text.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);
-  if (sol) return sol[0];
   return null;
 }
 
@@ -538,8 +553,9 @@ export function startTelegramBot(): void {
 
     // Full AI conversation (tax question or anything else)
     if (isTaxQuestion(text) || text.length > 15 || !!session.reportSummary) {
-      session.history.push({ role: 'user', content: text });
-      sessions.set(userId, session);
+      // NOTE: do NOT push to session.history here — processMessage() adds
+      // userMessage itself to the Groq messages array. Push after we have
+      // the response to avoid the message appearing twice in context (M2 fix).
 
       // Build report context string if user has a fresh report
       const reportContext = session.reportSummary
@@ -574,6 +590,8 @@ export function startTelegramBot(): void {
         }
 
         const replyText = response.text || "Not sure about that — type /guide for topics!";
+        // Push both turns together now that we have the full exchange
+        session.history.push({ role: 'user', content: text });
         session.history.push({ role: 'assistant', content: replyText });
         sessions.set(userId, session);
         await ctx.reply(replyText, { parse_mode: 'Markdown' });
