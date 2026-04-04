@@ -111,23 +111,26 @@ async function fetchAllTransactions(
 
   const params = new URLSearchParams({
     'filter[trash]': 'only_non_trash',
-    'filter[min_mined_at]': '1735689600',  // 2025-01-01 00:00:00 UTC
-    'filter[max_mined_at]': '1767225599',  // 2025-12-31 23:59:59 UTC
+    'filter[min_mined_at]': '1704067200',  // 2024-01-01 00:00:00 UTC
+    'filter[max_mined_at]': '1798761599',  // 2026-12-31 23:59:59 UTC
     'currency': 'usd',
     'page[size]': '100',
   });
 
   let path: string | null = `/wallets/${wallet}/transactions/?${params.toString()}`;
   let page = 0;
-  const MAX_PAGES = 5; // cap at 500 txs / $0.05 USDC max cost
+  const MAX_PAGES = 10;
 
   while (path && page < MAX_PAGES) {
     page++;
-    console.log(`[Zerion] Page ${page}...`);
+    console.log(`[Zerion] Fetching page ${page}...`);
     const result = await zerionGet(path);
+    const count = result.data?.length ?? 0;
+    console.log(`[Zerion] Page ${page}: ${count} transactions returned`);
 
     for (const tx of result.data ?? []) {
-      if (tx.attributes.status !== 'confirmed') continue;
+      // Include all non-failed transactions
+      if (tx.attributes.status === 'failed') continue;
       txs.push(tx);
       const chain = tx.relationships?.chain?.data?.id ?? 'ethereum';
       chains.add(chain);
@@ -143,6 +146,7 @@ async function fetchAllTransactions(
     }
   }
 
+  console.log(`[Zerion] Done. Total transactions: ${txs.length}, chains: ${[...chains].join(', ')}`);
   return { txs, chains: [...chains] };
 }
 
