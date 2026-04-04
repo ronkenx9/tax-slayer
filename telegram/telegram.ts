@@ -231,7 +231,14 @@ async function generateAndSendReport(ctx: Context, userId: number, wallet: strin
     ];
   }
 
-  await ctx.reply(insightLines.join('\n'), { parse_mode: 'Markdown' });
+  const insightText = insightLines.join('\n');
+  await ctx.reply(insightText, { parse_mode: 'Markdown' });
+
+  // Seed history so the AI remembers what it already told the user.
+  // Without this, follow-ups like "will that affect the insight?" have no context.
+  const insightPlain = insightText.replace(/[*_`]/g, ''); // strip markdown for cleaner history
+  session2.history.push({ role: 'assistant', content: insightPlain });
+  sessions.set(userId, session2);
 
   try { fs.unlinkSync(paths.csv); } catch { /* noop */ }
   try { fs.unlinkSync(paths.pdf); } catch { /* noop */ }
