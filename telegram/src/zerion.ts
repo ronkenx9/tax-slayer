@@ -93,12 +93,14 @@ async function zerionGet(path: string): Promise<ZerionPage> {
     },
   });
 
+  const rawBody = await res.text();
+  console.log(`[Zerion] HTTP ${res.status} — body: ${rawBody.slice(0, 500)}`);
+
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Zerion API error ${res.status}: ${body}`);
+    throw new Error(`Zerion API error ${res.status}: ${rawBody}`);
   }
 
-  return res.json() as Promise<ZerionPage>;
+  return JSON.parse(rawBody) as ZerionPage;
 }
 
 // ─── Paginated Transaction Fetch ──────────────────────────────────────────────
