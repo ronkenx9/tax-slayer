@@ -530,7 +530,7 @@ export function startTelegramBot(): void {
     }
 
     // Full AI conversation (tax question or anything else)
-    if (isTaxQuestion(text) || text.length > 15) {
+    if (isTaxQuestion(text) || text.length > 15 || !!session.reportSummary) {
       session.history.push({ role: 'user', content: text });
       sessions.set(userId, session);
 
