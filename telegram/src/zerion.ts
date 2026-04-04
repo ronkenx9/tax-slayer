@@ -141,7 +141,9 @@ async function fetchAllTransactions(
     if (!nextUrl) break;
     try {
       const u = new URL(nextUrl);
-      path = u.pathname + u.search;
+      // u.pathname includes /v1/wallets/... but ZERION_BASE already has /v1
+      // Strip leading /v1 to avoid double /v1/v1/ on page 2+
+      path = u.pathname.replace(/^\/v1/, '') + u.search;
     } catch {
       break;
     }
