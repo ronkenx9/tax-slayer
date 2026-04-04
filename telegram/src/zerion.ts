@@ -80,21 +80,23 @@ interface ZerionPage {
 async function zerionGet(path: string): Promise<ZerionPage> {
   if (!API_KEY) throw new Error('ZERION_API_KEY not set');
 
-  const url = `${ZERION_BASE}${path}`;
   const auth = `Basic ${Buffer.from(`${API_KEY}:`).toString('base64')}`;
 
-  console.log(`[Zerion] GET ${url}`);
+  // Build full URL — append raw search string to bypass WHATWG bracket encoding
+  const baseUrl = `${ZERION_BASE}${path}`;
+  console.log(`[Zerion] GET ${baseUrl}`);
 
-  const res = await fetch(url, {
+  const res = await fetch(baseUrl, {
     method: 'GET',
     headers: {
       'Authorization': auth,
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
     },
   });
 
   const rawBody = await res.text();
-  console.log(`[Zerion] HTTP ${res.status} — body: ${rawBody.slice(0, 500)}`);
+  console.log(`[Zerion] HTTP ${res.status} — body preview: ${rawBody.slice(0, 200)}`);
 
   if (!res.ok) {
     throw new Error(`Zerion API error ${res.status}: ${rawBody}`);
@@ -102,6 +104,7 @@ async function zerionGet(path: string): Promise<ZerionPage> {
 
   return JSON.parse(rawBody) as ZerionPage;
 }
+
 
 // ─── Paginated Transaction Fetch ──────────────────────────────────────────────
 
@@ -111,14 +114,9 @@ async function fetchAllTransactions(
   const txs: ZerionTx[] = [];
   const chains = new Set<string>();
 
-  // Build query string manually — URLSearchParams encodes [] as %5B%5D which Zerion rejects
-  const qs = [
-    'filter[trash]=only_non_trash',
-    'filter[min_mined_at]=1704067200',  // 2024-01-01 00:00:00 UTC
-    'filter[max_mined_at]=1798761599',  // 2026-12-31 23:59:59 UTC
-    'currency=usd',
-    'page[size]=100',
-  ].join('&');
+  // No date filter — fetch all txs sorted by date desc, filter by year in JS
+  // (date filters break due to WHATWG URL bracket re-encoding)
+  const qs = 'filter[trash]=only_non_trash&currency=usd&page[size]=100';
 
   let path: string | null = `/wallets/${wallet}/transactions/?${qs}`;
   let page = 0;
