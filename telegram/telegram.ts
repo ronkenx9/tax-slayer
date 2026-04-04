@@ -14,6 +14,18 @@ import { processMessage, isTaxQuestion, isGuideRequest } from './src/agent.js';
 
 // ─── Session State ────────────────────────────────────────────────────────────
 
+interface ReportSummary {
+  wallet: string;
+  chains: string[];
+  totalTxs: number;
+  taxableEvents: number;
+  totalInflows: number;
+  totalOutflows: number;
+  totalPnL: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
 interface Session {
   wallet?: string;
   paymentSession?: PaymentSession;
@@ -21,6 +33,7 @@ interface Session {
   tier: 'free' | 'paid';
   waitingFor?: 'wallet' | 'payment_confirm';
   history: Array<{ role: string; content: string }>;
+  reportSummary?: ReportSummary; // Kept after report delivery for follow-up Q&A
 }
 
 const sessions = new Map<number, Session>();
@@ -130,7 +143,7 @@ async function generateAndSendReport(ctx: Context, userId: number, wallet: strin
       '✅ *Tax Report Complete*',
       '',
       `Wallet: \`${wallet}\``,
-      `Period: ${summary.periodStart} → ${summary.periodEnd}`,
+      `Period: ${summary.periodStart} to ${summary.periodEnd}`,
       `Chains: ${txData.chains.join(', ')}`,
       '',
       '📈 *Summary*',
@@ -147,14 +160,81 @@ async function generateAndSendReport(ctx: Context, userId: number, wallet: strin
     { parse_mode: 'Markdown' },
   );
 
-  await ctx.reply(
-    '🎉 *Thank you for choosing Tax Slayer Agent!*\n\n_Your report was generated using Zerion on-chain data, FIFO cost basis, and delivered via x402 protocol._\n\nType /report anytime to run another.',
-    { parse_mode: 'Markdown' },
-  );
+  // ── Store summary in session for follow-up Q&A ────────────────────────────
+  const reportSummary: ReportSummary = {
+    wallet,
+    chains: txData.chains,
+    totalTxs: txData.transactions.length,
+    taxableEvents: summary.taxableEvents,
+    totalInflows: summary.totalInflows,
+    totalOutflows: summary.totalOutflows,
+    totalPnL: summary.totalPnL,
+    periodStart: summary.periodStart,
+    periodEnd: summary.periodEnd,
+  };
+
+  const session2 = getSession(userId);
+  session2.waitingFor = undefined;
+  session2.reportSummary = reportSummary;
+  session2.history = []; // fresh history for post-report conversation
+  sessions.set(userId, session2);
+
+  // ── Proactive tax insights ─────────────────────────────────────────────────
+  const pnl = summary.totalPnL;
+  const isLoss = pnl < 0;
+  const absPnL = Math.abs(pnl).toFixed(2);
+
+  let insightLines: string[];
+  if (isLoss) {
+    const lossOffset = Math.min(Math.abs(pnl), 3000).toFixed(2);
+    insightLines = [
+      '💡 *Quick Tax Insight*',
+      '',
+      `You had a *net loss of $${absPnL}* across ${summary.taxableEvents} taxable events.`,
+      '',
+      '*Good news for most jurisdictions:*',
+      `• You likely owe *$0* in crypto capital gains tax`,
+      `• US: offset up to *$${lossOffset}* of ordinary income (salary etc.)`,
+      `• Remaining losses carry forward to 2026 automatically`,
+      `• UK: report the loss to HMRC to bank the credit`,
+      '',
+      '📍 *Tell me your country* and I\'ll give you a precise breakdown.',
+      '',
+      '_Or ask me anything:_',
+      '• "Do I owe any tax?"',
+      '• "How do I file this loss?"',
+      '• "Can I offset my salary with crypto losses?"',
+    ];
+  } else {
+    const shortTermEstUS = (pnl * 0.22).toFixed(2); // ~22% bracket estimate
+    const longTermEstUS = (pnl * 0.15).toFixed(2);  // 15% LTCG estimate
+    insightLines = [
+      '💡 *Quick Tax Insight*',
+      '',
+      `You had a *net gain of $${absPnL}* across ${summary.taxableEvents} taxable events.`,
+      '',
+      '*Rough US estimates (varies by bracket):*',
+      `• Short-term gains (held <1yr): ~$${shortTermEstUS} tax`,
+      `• Long-term gains (held >1yr): ~$${longTermEstUS} tax`,
+      '',
+      '*To reduce your bill:*',
+      '• Harvest any remaining unrealized losses before Dec 31',
+      '• Check if any positions qualify for long-term rates',
+      '• DeFi/staking income is taxed as ordinary income',
+      '',
+      '📍 *Tell me your country* for a precise estimate.',
+      '',
+      '_Or ask me anything:_',
+      '• "How much do I owe in taxes?"',
+      '• "Which of my trades were short vs long term?"',
+      '• "How do I reduce my crypto tax bill?"',
+    ];
+  }
+
+  await ctx.reply(insightLines.join('\n'), { parse_mode: 'Markdown' });
 
   try { fs.unlinkSync(paths.csv); } catch { /* noop */ }
   try { fs.unlinkSync(paths.pdf); } catch { /* noop */ }
-  sessions.delete(userId);
 }
 
 // ─── Bot Setup ────────────────────────────────────────────────────────────────
@@ -454,8 +534,23 @@ export function startTelegramBot(): void {
       session.history.push({ role: 'user', content: text });
       sessions.set(userId, session);
 
+      // Build report context string if user has a fresh report
+      const reportContext = session.reportSummary
+        ? [
+            `Wallet: ${session.reportSummary.wallet}`,
+            `Period: ${session.reportSummary.periodStart} to ${session.reportSummary.periodEnd}`,
+            `Chains: ${session.reportSummary.chains.join(', ')}`,
+            `Total transactions: ${session.reportSummary.totalTxs}`,
+            `Taxable events: ${session.reportSummary.taxableEvents}`,
+            `Total inflows: $${session.reportSummary.totalInflows.toFixed(2)}`,
+            `Total outflows: $${session.reportSummary.totalOutflows.toFixed(2)}`,
+            `Realized PnL: ${session.reportSummary.totalPnL >= 0 ? '+' : '-'}$${Math.abs(session.reportSummary.totalPnL).toFixed(2)}`,
+            `Net result: ${session.reportSummary.totalPnL >= 0 ? 'GAIN' : 'LOSS'}`,
+          ].join('\n')
+        : undefined;
+
       try {
-        const response = await processMessage(text, { history: session.history, userName: ctx.from.first_name });
+        const response = await processMessage(text, { history: session.history, userName: ctx.from.first_name, reportContext });
 
         // Handle guide intents from AI
         if (response.intent === 'guide_request') {

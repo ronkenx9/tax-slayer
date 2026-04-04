@@ -203,6 +203,7 @@ export async function processMessage(
   context: {
     history?: Array<{ role: string; content: string }>;
     userName?: string;
+    reportContext?: string; // Injected when user has a fresh report in session
   } = {},
 ): Promise<AgentResponse> {
   const detectedWallet = extractWalletAddress(userMessage);
@@ -215,8 +216,13 @@ export async function processMessage(
   }
 
   // Build Groq messages
+  let systemPrompt = buildSystemPrompt();
+  if (context.reportContext) {
+    systemPrompt += `\n\nACTIVE REPORT CONTEXT — the user JUST received this tax report. Use these exact numbers when answering follow-up questions about tax liability, what they owe, or how to file:\n${context.reportContext}\n\nWhen they ask "how much tax do I owe", calculate it from the Realized PnL above based on their jurisdiction. If net loss, explain the loss harvesting benefit. Be specific with numbers.`;
+  }
+
   const messages: Groq.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: buildSystemPrompt() },
+    { role: 'system', content: systemPrompt },
   ];
 
   // Include history (last 10 turns to keep context window lean)
