@@ -180,13 +180,13 @@ async function generateAndSendReport(ctx: Context, userId: number, wallet: strin
   sessions.set(userId, session2);
 
   // ── Proactive tax insights ─────────────────────────────────────────────────
-  const pnl = summary.totalPnL;
-  const isLoss = pnl < 0;
-  const absPnL = Math.abs(pnl).toFixed(2);
+  const rawPnL = summary.totalPnL;
+  const isLoss = rawPnL < 0;
+  const absPnL = Math.abs(rawPnL).toFixed(2);
 
   let insightLines: string[];
   if (isLoss) {
-    const lossOffset = Math.min(Math.abs(pnl), 3000).toFixed(2);
+    const lossOffset = Math.min(Math.abs(rawPnL), 3000).toFixed(2);
     insightLines = [
       '💡 *Quick Tax Insight*',
       '',
@@ -206,8 +206,8 @@ async function generateAndSendReport(ctx: Context, userId: number, wallet: strin
       '• "Can I offset my salary with crypto losses?"',
     ];
   } else {
-    const shortTermEstUS = (pnl * 0.22).toFixed(2); // ~22% bracket estimate
-    const longTermEstUS = (pnl * 0.15).toFixed(2);  // 15% LTCG estimate
+    const shortTermEstUS = (rawPnL * 0.22).toFixed(2); // ~22% bracket estimate
+    const longTermEstUS = (rawPnL * 0.15).toFixed(2);  // 15% LTCG estimate
     insightLines = [
       '💡 *Quick Tax Insight*',
       '',
