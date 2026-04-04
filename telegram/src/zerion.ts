@@ -109,15 +109,16 @@ async function fetchAllTransactions(
   const txs: ZerionTx[] = [];
   const chains = new Set<string>();
 
-  const params = new URLSearchParams({
-    'filter[trash]': 'only_non_trash',
-    'filter[min_mined_at]': '1704067200',  // 2024-01-01 00:00:00 UTC
-    'filter[max_mined_at]': '1798761599',  // 2026-12-31 23:59:59 UTC
-    'currency': 'usd',
-    'page[size]': '100',
-  });
+  // Build query string manually — URLSearchParams encodes [] as %5B%5D which Zerion rejects
+  const qs = [
+    'filter[trash]=only_non_trash',
+    'filter[min_mined_at]=1704067200',  // 2024-01-01 00:00:00 UTC
+    'filter[max_mined_at]=1798761599',  // 2026-12-31 23:59:59 UTC
+    'currency=usd',
+    'page[size]=100',
+  ].join('&');
 
-  let path: string | null = `/wallets/${wallet}/transactions/?${params.toString()}`;
+  let path: string | null = `/wallets/${wallet}/transactions/?${qs}`;
   let page = 0;
   const MAX_PAGES = 10;
 
