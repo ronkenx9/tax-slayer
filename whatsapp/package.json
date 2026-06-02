@@ -9,7 +9,7 @@
     "start:local": "npx tsx index.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.82.0",
+    "@anthropic-ai/sdk": "^0.91.1",
     "@whiskeysockets/baileys": "^6.7.16",
     "csv-writer": "^1.6.0",
     "dotenv": "^16.4.5",
